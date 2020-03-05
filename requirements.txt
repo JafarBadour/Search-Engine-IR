@@ -1,0 +1,4 @@
+Unidecode
+config
+bs4
+nltk
