@@ -1,3 +1,4 @@
 .idea/
 venv
-misc/*
+Crawler/.misc
+search-engine.ipynb
