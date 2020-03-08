@@ -63,7 +63,7 @@ class Crawler:
                     zip([f"{document_path('./.misc/docs/', file[:-4])}/{str(i + 1)}.txt" for i in range(len(docs))],
                         docs)))
 
-            break ## DELETE BEFORE DEPLOYMENT
+
 
     def retrieve_docs(self):
         # for now random
