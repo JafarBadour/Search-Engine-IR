@@ -1,4 +1,6 @@
+flask
 Unidecode
 config
 bs4
 nltk
+requests

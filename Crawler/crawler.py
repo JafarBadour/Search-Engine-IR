@@ -2,33 +2,13 @@ import codecs
 import json
 import os
 import os.path
-import re
-import tarfile
-import urllib.request as req
 import random
+import re
+
 from bs4 import BeautifulSoup
 
+from DataManager.datamanager import document_path, save_docs, download_and_extract
 from Parser.query_parser import Parser
-
-
-def download_and_extract(url, filepath):
-    tolerant_mkdir('.misc')
-    tolerant_mkdir('.misc/docs')
-    tolerant_mkdir('.misc/files')
-    if os.path.isfile(filepath):
-        return 0
-    else:
-        req.urlretrieve(url, filepath)
-    tf = tarfile.open("./.misc/reuters.tar.gz")
-    tf.extractall('./.misc/files/')
-
-
-def tolerant_mkdir(path):
-    try:
-        os.mkdir(path)
-        return 'Success'
-    except:
-        return 'Failed'
 
 
 def get_documents(file):
@@ -44,15 +24,11 @@ def get_documents(file):
     return docs
 
 
-def save_docs(path, docs, directory):
-    path = os.path.join(path, os.path.basename(directory))
-    print(f"file {os.path.basename(directory)} docs are being processed and extracted to {path}")
 
-    tolerant_mkdir(path)
-    for i in range(1, len(docs) + 1):
-        newpath = os.path.join(path, str(i) + ".txt")
-        with open(newpath, 'w') as f:
-            f.write(docs[i - 1])
+
+
+def process_docs(docs):
+    return list(map(lambda x: BeautifulSoup(x, features="html.parser").get_text(), docs))
 
 
 class Crawler:
@@ -62,13 +38,8 @@ class Crawler:
         self.downloaded = downloaded
         self.docs = []
 
-    def process_docs(self, docs, f):
-        collection = [[]]
-        for line in f:
-            soup = BeautifulSoup(line)
-            collection[-1].extend(self.parser.preprocess(soup.get_text()))
+    def get_collection(self):
 
-    def save_collection(self):
         if os.path.isfile('collection.json'):
             with open('collection.json', 'r') as fd:
                 return json.load(fd)
@@ -86,14 +57,19 @@ class Crawler:
 
             with codecs.open(file, 'r', encoding='utf-8', errors='ignore') as f:
                 docs = get_documents(f)
+                docs = process_docs(docs)
                 save_docs('./.misc/docs', docs, file[:-4])
-                self.docs.extend(docs)
+                self.docs.extend(list(
+                    zip([f"{document_path('./.misc/docs/', file[:-4])}/{str(i + 1)}.txt" for i in range(len(docs))],
+                        docs)))
 
     def retrieve_docs(self):
         # for now random
+
         return random.choice(self.docs)
+
 
 if __name__ == '__main__':
     crawler = Crawler(downloaded=True)
-    crawler.save_collection()
+    crawler.get_collection()
     print(crawler.retrieve_docs())

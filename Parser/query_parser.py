@@ -27,16 +27,19 @@ def stemmatiztion(tokens):
     return list(map(ps.stem, tokens))
 
 
-def remove_stop_word(tokens):
-    stopping_words = set(nltk.corpus.stopwords.words('english'))
-    return [word for word in tokens if word not in stopping_words]
-
-
 class Parser:
     # normalize text
 
     def __init__(self):
         self.ntlk_downloaded = False
+        self.stopping_words = set(nltk.corpus.stopwords.words('english'))
+
+    def remove_stop_word(self, tokens):
+
+        return [word for word in tokens if word not in self.stopping_words]
+
+    def is_stopping_word(self, token: str):
+        return token in self.stopping_words
 
     def download_packages(self):
         if not self.ntlk_downloaded:
@@ -51,7 +54,7 @@ class Parser:
 
     def preprocess(self, text, is_query=False):
 
-        res = remove_stop_word(lemmatization(self.tokenize(normalize(text, is_query))))
+        res = self.remove_stop_word(lemmatization(self.tokenize(normalize(text, is_query))))
         if not is_query:
             return ["$" + i + "$" for i in res]
         else:

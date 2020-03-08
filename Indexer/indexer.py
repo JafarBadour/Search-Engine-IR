@@ -2,6 +2,7 @@ import json
 import os.path
 import re
 from Parser.query_parser import Parser
+from DataManager.datamanager import tolerant_mkdir, get_parent, save_doc
 
 
 def to_n_gram(tokens, n=2):  # default is a bigram
@@ -12,7 +13,6 @@ def to_n_gram(tokens, n=2):  # default is a bigram
     for token in tokens:
         ngrams = zip(*[token[i:] for i in range(n)])
         res += ["".join(ngram) for ngram in ngrams]
-
     return res
 
 
@@ -68,81 +68,103 @@ def write_cached(inverted_word_index, ngram_word_index):
     return 'Success'
 
 
+def merge(dic1, dic2):
+    if len(dic1) < len(dic2):
+        dic2, dic1 = dic1, dic2
+    dic3 = dic1.copy()
+    for key in dic2.keys():
+        d = dic3.setdefault(key, set([]))
+        dic3[key] = d.union(dic2[key])
+    return dic3
+
+
 class Indexer:
     def __init__(self):
-        self.index = None
+        self.aux_index = {}
+
         self.documents = None
         self.collection = None
         self.parser = Parser()
-        self.ngram_word_index = None
+        self.ngram_word_index = {}
+        tolerant_mkdir('.misc')
+        tolerant_mkdir('.misc/docs')
 
+    def __call__(self, new_doc):
+        path, doc = new_doc
 
-    def make_word_index(self, collection, force=False):
-        inverted_word_index = {}
+        parent_path = get_parent(path)
+        tolerant_mkdir(parent_path)
+        save_doc(path, doc)
+        collection = self.parser.preprocess(doc)
+        collection = list(zip([path] * len(collection), collection))
+        self.make_index(collection)
+        self.make_word_index(collection)
+        # return collection
+
+    def make_word_index(self, collection):
+        words = {}
         ngram_word_index = {}
-        if not force:
-            a, b = get_cached()
-            if bool(a) and bool(b):
-                return a, b
-        print('gg')
-        for (group, name) in collection:
-            for word in group:
-                if word in inverted_word_index.keys():
-                    continue
-                else:
-                    ngrams = to_n_gram(word)
-                    inverted_word_index[word] = ngrams
-                    for gram in set(ngrams):
-                        d = ngram_word_index.setdefault(gram, set([]))
-                        d.add(word)
-        write_cached(inverted_word_index, ngram_word_index)
-        return inverted_word_index, ngram_word_index
 
-    def wild_find(self, token, ngram_word_index):
-        temp_token = token
-        if len(token) < 2:
-            return "Minimum length should be 2 letters"
-        if token[-1] == '*':
-            token = token[:-1]
-            token = "$" + token
-        elif token[0] == '*':
-            token = token[1:] + "$"
-        elif token.find("*") != -1:
-            token = token.split('*')
-            token[0] = "$" + token[0]
-            token[1] = token[1] + "$"
-
-        ngrams = to_n_gram(token)
-        # print(ngrams)
-        A = ngram_word_index[ngrams[0]]
-        temp_token = "\$" + temp_token.replace("*", "[a-z]*") + "\$"
-        # print(temp_token)
-        pattern = re.compile(temp_token)
-
-        answers = A.intersection(*[ngram_word_index[vi] for vi in ngrams[1:]])
-        return [i for i in answers if pattern.match(i)]
+        for path, word in collection:
+            if word in words.keys():
+                continue
+            else:
+                words[word] = True
+                ngrams = to_n_gram(word)
+                for gram in set(ngrams):
+                    d = ngram_word_index.setdefault(gram, set([]))
+                    d.add(word)
+        self.ngram_word_index = merge(self.ngram_word_index, ngram_word_index)
 
     def make_index(self, collection):
         inverted_index = {}
-        for (group, name) in collection:
-            # print(name)
-            for word in group:
-                if word in inverted_index.keys():
-                    inverted_index[word].add(name)
-                else:
-                    inverted_index[word] = set([name])
-        return inverted_index
 
-    def get_options(self, token, ngram_word_index):
+        for path, word in collection:
+            # print(word)
+            if word in inverted_index.keys():
+                inverted_index[word].add(path)
+            else:
+                inverted_index[word] = set([path])
+        self.aux_index = merge(inverted_index, self.aux_index)
+
+    def wild_find(self, tokens):
+        temp_tokens = tokens
+        if len(tokens) < 2:
+            return "Minimum length should be 2 letters"
+        if tokens[-1] == '*':
+            tokens = tokens[:-1]
+            tokens = "$" + tokens
+        elif tokens[0] == '*':
+            tokens = tokens[1:] + "$"
+        elif tokens.find("*") != -1:
+            tokens = tokens.split('*')
+            tokens[0] = "$" + tokens[0]
+            tokens[1] = tokens[1] + "$"
+
+        ngrams = to_n_gram(tokens)
+        if any(not gram in self.ngram_word_index.keys() for gram in ngrams):
+            return []
+        A = self.ngram_word_index[ngrams[0]]
+        temp_tokens = "\$" + temp_tokens.replace("*", "[a-z]*") + "\$"
+
+        pattern = re.compile(temp_tokens)
+
+        answers = A.intersection(*[self.ngram_word_index[vi] for vi in ngrams[1:]])
+        return [i for i in answers if pattern.match(i)]
+
+    def get_options(self, token):
         setty = None
         grams = to_n_gram(token, 2)
         for gram in grams:
+            if not gram in self.ngram_word_index.keys():
+                continue
             if not setty:
-                setty = ngram_word_index[gram]
-            setty = setty.union(ngram_word_index[gram])
+                setty = self.ngram_word_index[gram]
+            setty = setty.union(self.ngram_word_index[gram])
 
-        mxi, oword = 1000, ''
         arr = []
+        if not setty:
+            return []
         for word in setty:
             edit_dst = edit_distance(token, word)
             if edit_dst > 3:
@@ -152,36 +174,44 @@ class Indexer:
         # print(arr[:4])
         return [i[1] for i in arr[:5] if i[0] == arr[0][0]]
 
-    def correct_spelling(self, text, ngram_word_index):
-        tokens = preprocess(text)
+    def correct_spelling(self, text):
+        tokens = self.parser.preprocess(text)
         print("query is ", tokens)
         new_text = ""
         for token in tokens:
-            options = get_options(token, ngram_word_index)
-            oword = options[0]
+            options = self.get_options(token)
+            oword = token
+
+            if len(options) > 0:
+                oword = options[0]
+
             new_text = new_text + " " + oword
 
         return new_text
 
-    def search(self, index, query, collection):
-        query_copy = preprocess(query, is_query=True)
+    def search(self, query: str):
+        query_copy = self.parser.preprocess(query, is_query=True)
         expression = ''
         relevant = None
         for word in query_copy:
-            potential_words = wild_find(word, ngram_word_index)
+            potential_words = self.wild_find(word)
             if word.find('*') == -1:
-                potential_words = get_options("$" + word + "$", inverted_word_index, ngram_word_index)
+                potential_words = self.get_options("$" + word + "$")
             expression = expression + " && (" + " || ".join(potential_words) + ") "
 
-            if not any(word in index for word in potential_words):
+            if not any(word in self.aux_index.keys() for word in potential_words):
                 return set()
             new_set = set([])
-            new_set = new_set.union(*[index[w] for w in potential_words])  # Union for multiple documents
+            new_set = new_set.union(*[self.aux_index[w] for w in potential_words])  # Union for multiple documents
 
             if relevant:
                 relevant = relevant.intersection(new_set)
             else:
                 relevant = new_set
-        relevant_documents = [collection[doc_id] for doc_id in relevant]
+        relevant_documents = [doc_id for doc_id in relevant]
         print("Query expression is :: ", expression[3:])
-        return relevant_documents
+        return list(relevant_documents)
+
+
+if __name__ == '__main__':
+    indexer = Indexer()
