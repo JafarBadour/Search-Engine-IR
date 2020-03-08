@@ -10,7 +10,7 @@ app.config['SECRET_KEY'] = '5791628bb0b13ce1c676dfde280ba245'
 
 @app.route('/post_query/<string:query>', methods=['POST', 'GET'])
 def post_query(query):
-    print("WTFFFF")
+
     print(indexer.search(query=query))
     exp, res = indexer.search(query=query)
     print(indexer.search(query=query))

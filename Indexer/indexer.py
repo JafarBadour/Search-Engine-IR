@@ -1,8 +1,7 @@
-import json
-import os.path
 import re
+
+from DataManager.datamanager import tolerant_mkdir, get_parent, save_doc, merge, DBmanager
 from Parser.query_parser import Parser
-from DataManager.datamanager import tolerant_mkdir, get_parent, save_doc
 
 
 def to_n_gram(tokens, n=2):  # default is a bigram
@@ -43,47 +42,13 @@ def soundex_encode(word):
     return word[:4]
 
 
-def get_cached():
-    a, b = {}, {}
-    if os.path.isfile('inverted_word_index.json'):
-        with open('inverted_word_index.json', 'r') as fd:
-            a = json.load(fd)
-            a = {vi: set(a[vi]) for vi in a.keys()}
-    if os.path.isfile('ngram_word_index.json'):
-        with open('ngram_word_index.json', 'r') as fd:
-            b = json.load(fd)
-            b = {vi: set(b[vi]) for vi in b.keys()}
-    return a, b
-
-
-def write_cached(inverted_word_index, ngram_word_index):
-    a, b = inverted_word_index, ngram_word_index
-    print(type(a), type(b))
-    with open('inverted_word_index.json', 'w') as fd:
-        data = {vi: list(a[vi]) for vi in a.keys()}
-        a = json.dump(data, fd)
-    with open('ngram_word_index.json', 'w') as fd:
-        data = {vi: list(b[vi]) for vi in b.keys()}
-        json.dump(data, fd)
-    return 'Success'
-
-
-def merge(dic1, dic2):
-    if len(dic1) < len(dic2):
-        dic2, dic1 = dic1, dic2
-    dic3 = dic1.copy()
-    for key in dic2.keys():
-        d = dic3.setdefault(key, set([]))
-        dic3[key] = d.union(dic2[key])
-    return dic3
-
-
 class Indexer:
     def __init__(self):
         self.aux_index = {}
 
         self.documents = None
         self.collection = None
+        self.db = DBmanager()
         self.parser = Parser()
         self.ngram_word_index = {}
         tolerant_mkdir('.misc')
@@ -99,6 +64,7 @@ class Indexer:
         collection = list(zip([path] * len(collection), collection))
         self.make_index(collection)
         self.make_word_index(collection)
+        self.db.free_aux_index(aux_index=self.aux_index)
         # return collection
 
     def make_word_index(self, collection):
@@ -203,6 +169,10 @@ class Indexer:
 
             if not any(word in self.aux_index.keys() for word in potential_words):
                 return "Nothing", set()
+            for wordy in potential_words:
+                if len(self.aux_index[wordy]) == 0:
+                    print("Retrieving data from db")
+                    self.db.update_aux_index(self.aux_index, wordy)
             new_set = set([])
             new_set = new_set.union(*[self.aux_index[w] for w in potential_words])  # Union for multiple documents
 

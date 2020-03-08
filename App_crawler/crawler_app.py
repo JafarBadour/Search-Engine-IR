@@ -24,6 +24,13 @@ if __name__ == '__main__':
 
     while True:
         doc = crawler.retrieve_docs()
-        add_document(doc, 5500)
-        add_document(doc, 6500)
+        try:
+            add_document(doc, 5500)
+        except:
+            pass
+
+        try:
+            add_document(doc, 6500)
+        except:
+            pass
         time.sleep(2.5)
