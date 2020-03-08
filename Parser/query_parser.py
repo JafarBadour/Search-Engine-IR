@@ -7,6 +7,7 @@ from nltk.stem import WordNetLemmatizer
 
 def normalize(text, is_query=False):
     text = unidecode.unidecode(text)  # remove accents
+    text = text.replace('+',' ')
     text = re.sub('(\w)', lambda m: m.group(0).lower(), text)  # to_lower the entire text
     if is_query:
         text = re.sub('[^a-z $ *]', "", text)  # remove punctuations

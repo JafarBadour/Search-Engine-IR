@@ -190,7 +190,9 @@ class Indexer:
         return new_text
 
     def search(self, query: str):
+        print(query)
         query_copy = self.parser.preprocess(query, is_query=True)
+        print(query_copy)
         expression = ''
         relevant = None
         for word in query_copy:
@@ -200,7 +202,7 @@ class Indexer:
             expression = expression + " && (" + " || ".join(potential_words) + ") "
 
             if not any(word in self.aux_index.keys() for word in potential_words):
-                return set()
+                return "Nothing", set()
             new_set = set([])
             new_set = new_set.union(*[self.aux_index[w] for w in potential_words])  # Union for multiple documents
 
@@ -210,7 +212,7 @@ class Indexer:
                 relevant = new_set
         relevant_documents = [doc_id for doc_id in relevant]
         print("Query expression is :: ", expression[3:])
-        return list(relevant_documents)
+        return expression[3:], list(relevant_documents)
 
 
 if __name__ == '__main__':

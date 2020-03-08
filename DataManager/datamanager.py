@@ -26,6 +26,13 @@ def save_docs(path, docs, directory):
         with open(newpath, 'w') as f:
             f.write(docs[i - 1])
 
+def read_doc(path):
+    res = 'Failed'
+    print(path)
+    with open(path, 'r') as f:
+        res = f.readlines()
+
+    return "\n".join(res)
 
 def save_doc(path, doc):
 
