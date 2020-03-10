@@ -6,7 +6,6 @@ import urllib.request as req
 import json
 
 
-
 def document_path(path, directory):
     return os.path.join(path, os.path.basename(directory))
 

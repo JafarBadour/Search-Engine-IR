@@ -40,9 +40,6 @@ class Crawler:
 
     def get_collection(self):
 
-        if os.path.isfile('collection.json'):
-            with open('collection.json', 'r') as fd:
-                return json.load(fd)
         if not self.downloaded:
             download_and_extract(
                 'https://archive.ics.uci.edu/ml/machine-learning-databases/reuters21578-mld/reuters21578.tar.gz',
@@ -50,6 +47,7 @@ class Crawler:
             self.downloaded = True
 
         pattern = re.compile(".+\.sgm$")
+
         for file in os.listdir("./.misc/files"):
             file = './.misc/files/' + file
             if not pattern.match(file):

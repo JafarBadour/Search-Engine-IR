@@ -18,7 +18,7 @@ def add_document(doc, port):
 
 
 if __name__ == '__main__':
-    crawler = Crawler(downloaded=True)
+    crawler = Crawler(downloaded=False)
     print(crawler.downloaded)
     crawler.get_collection()
 
