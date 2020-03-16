@@ -15,8 +15,6 @@ def add_document(doc, port):
     print(f"Sent document {path} to slave with port number {port}")
 
 
-
-
 if __name__ == '__main__':
     crawler = Crawler(downloaded=False)
     print(crawler.downloaded)
