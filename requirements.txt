@@ -4,3 +4,6 @@ config
 bs4
 nltk
 requests
+numpy
+sklearn
+matplotlib

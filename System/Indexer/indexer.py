@@ -1,7 +1,10 @@
+import functools
+import math
 import re
-
+from sklearn.decomposition import PCA
 from System.DataManager.datamanager import tolerant_mkdir, get_parent, save_doc, merge, DBmanager
 from System.Parser.query_parser import Parser
+import matplotlib.pyplot as plt
 
 
 def to_n_gram(tokens, n=2):  # default is a bigram
@@ -42,15 +45,83 @@ def soundex_encode(word):
     return word[:4]
 
 
+def show_points_2d(X, Y, xaxis, yaxis, paths):
+    plt.figure(figsize=(15, 10))
+    plt.xlabel(xaxis)
+    plt.ylabel(yaxis)
+    classes = set()
+    for x, y, p in zip(X, Y, paths):
+        plt.plot([x], [y], "o", markersize=20, color='blue')
+        plt.text(x, y, p, fontsize=16)
+    plt.legend()
+    plt.axvline(0)
+    plt.axhline(0)
+    plt.savefig('../2d.png')
+
+
+def show_points_3d(X, Y, Z, paths):
+    fig = plt.figure(figsize=(15, 10))
+    ax = fig.add_subplot(111, projection='3d')
+    for x, y, z in zip(X, Y, Z):
+        ax.scatter([x], [y], [z], marker='o', color='red')
+    plt.savefig('../3d.png')
+
+
+def count_tf(tokens):
+    res = dict()
+    for token in tokens:
+        res.setdefault(token, 0)
+        res[token] = 1 if not res[token] else res[token] + 1
+    for key in res.keys():
+        res[key] = res[key]
+    return res
+
+
+def get_matrix(term_doc_index):
+    paths = term_doc_index.keys()
+    feature_set = set([])
+    rows = []
+    for path in paths:
+        feature_set.update(term_doc_index[path].keys())
+        rows.append(term_doc_index[path])
+        if len(feature_set) > 100000:
+            break
+    s = dict(zip(feature_set, [0] * len(feature_set)))
+    res = []
+    for row in rows:
+        sc = s.copy()
+        sc.update(row)
+        res.append(list(sc.values()))
+    print('Len rows is ', len(rows))
+
+    return res, paths
+
+
+def get_pca_decomposition(term_doc_matrix):
+    A, paths = get_matrix(term_doc_matrix)
+    pca = PCA(n_components=3)
+    pca.fit(A)
+    # print(pca.explained_variance_ratio_)
+    k = 3
+
+    # TODO apply PCA to matrix A, and save the results to Ak
+    Ak = pca.fit_transform(A)
+    varience_ratio = pca.explained_variance_ratio_
+    print("2 first dimensions")
+    show_points_2d(Ak.T[0], Ak.T[1], "1 principal component", "2 principal component", paths)
+    print("3 first dimensions")
+    show_points_3d(Ak.T[0], Ak.T[1], Ak.T[2], paths)
+    return varience_ratio
+
 class Indexer:
     def __init__(self):
         self.aux_index = {}
-
         self.documents = None
         self.collection = None
         self.db = DBmanager()
         self.parser = Parser()
         self.ngram_word_index = {}
+        self.term_doc_matrix = dict()
         tolerant_mkdir('.misc')
         tolerant_mkdir('.misc/docs')
 
@@ -61,11 +132,23 @@ class Indexer:
         tolerant_mkdir(parent_path)
         save_doc(path, doc)
         collection = self.parser.preprocess(doc)
-        collection = list(zip([path] * len(collection), collection))
-        self.make_index(collection)
-        self.make_word_index(collection)
+        zipped_collection = list(zip([path] * len(collection), collection))
+        self.fill_term_matrix(path=path, collection=collection)
+        self.make_index(zipped_collection)
+        self.make_word_index(zipped_collection)
         self.db.free_aux_index(aux_index=self.aux_index)
         # return collection
+
+    def pca_visualize(self):
+        return get_pca_decomposition(self.term_doc_matrix)
+
+    def fill_term_matrix(self, path: str, collection):
+        term_vector = count_tf(collection)
+        L2norm = math.sqrt(
+            functools.reduce(lambda x, y: (term_vector[x] ** 2 if type('str') == type(x) else x) + term_vector[y] ** 2,
+                             term_vector.keys()))
+        term_vector = dict([(i, term_vector[i] / L2norm) for i in term_vector.keys()])
+        self.term_doc_matrix.setdefault(path, term_vector)
 
     def make_word_index(self, collection):
         words = {}

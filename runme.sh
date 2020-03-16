@@ -7,4 +7,5 @@ mkdir misc
 pip install flask
 pip install flask-wtf
 pip install requests
+pip install -r requirements.txt
 #export FLASK_APP=hello.py
