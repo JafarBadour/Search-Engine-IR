@@ -1,7 +1,6 @@
-from flask import Flask, render_template, redirect, request
-from Indexer.indexer import Indexer
-from DataManager.datamanager import read_doc
-import json
+from flask import Flask, render_template, request
+from System.Indexer.indexer import Indexer
+from System.DataManager.datamanager import read_doc
 
 app = Flask(__name__)
 indexer = Indexer()

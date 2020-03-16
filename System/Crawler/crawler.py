@@ -1,5 +1,4 @@
 import codecs
-import json
 import os
 import os.path
 import random
@@ -7,8 +6,8 @@ import re
 
 from bs4 import BeautifulSoup
 
-from DataManager.datamanager import document_path, save_docs, download_and_extract
-from Parser.query_parser import Parser
+from System.DataManager.datamanager import document_path, save_docs, download_and_extract
+from System.Parser.query_parser import Parser
 
 
 def get_documents(file):
@@ -48,7 +47,7 @@ class Crawler:
 
         pattern = re.compile(".+\.sgm$")
 
-        for file in os.listdir("./.misc/files"):
+        for file in os.listdir(".misc/files"):
             file = './.misc/files/' + file
             if not pattern.match(file):
                 continue

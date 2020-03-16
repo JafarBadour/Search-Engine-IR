@@ -1,4 +1,4 @@
-from Parser.query_parser import Parser, normalize
+from System.Parser.query_parser import Parser, normalize
 import unittest
 
 text = """Borrowed from \n\n Latins* $ teachers drunks zinjs per he drank, he killed  he'll  

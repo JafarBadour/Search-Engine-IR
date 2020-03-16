@@ -1,6 +1,6 @@
 from flask import Flask, render_template, redirect, request
 from html import *
-from App_master.forms import SearchForm
+from Apps.App_master.forms import SearchForm
 from load_balancer import LoadBalancer
 
 app = Flask(__name__)

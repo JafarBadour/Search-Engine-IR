@@ -1,8 +1,8 @@
 import re
 
-from DataManager.datamanager import tolerant_mkdir, get_parent, save_doc, merge, DBmanager
-from Parser.query_parser import Parser
-import sys
+from System.DataManager.datamanager import tolerant_mkdir, get_parent, save_doc, merge, DBmanager
+from System.Parser.query_parser import Parser
+
 
 def to_n_gram(tokens, n=2):  # default is a bigram
     if type(tokens) != type([]):

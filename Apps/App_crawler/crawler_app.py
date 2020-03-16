@@ -1,5 +1,5 @@
 import requests
-from Crawler.crawler import Crawler
+from System.Crawler.crawler import Crawler
 
 import time
 

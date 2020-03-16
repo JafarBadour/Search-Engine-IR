@@ -1,6 +1,6 @@
 .idea/
 venv
-Crawler/.misc
-App_slave/Slave_A/.misc
-App_slave/Slave_B/.misc
+System/Crawler/.misc
+Apps/App_slave/Slave_A/.misc
+Apps/App_slave/Slave_B/.misc
 .ipynb_checkpoints/

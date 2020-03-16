@@ -56,7 +56,7 @@ def download_and_extract(url, filepath):
 
 
 def get_parent(path):
-    path = os.path.join('.', path)
+    path = os.path.join('', path)
 
     parent_path = os.path.dirname(path)
     return parent_path
