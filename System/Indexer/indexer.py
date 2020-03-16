@@ -57,6 +57,7 @@ def show_points_2d(X, Y, xaxis, yaxis, paths):
     plt.axvline(0)
     plt.axhline(0)
     plt.savefig('../2d.png')
+    plt.close()
 
 
 def show_points_3d(X, Y, Z, paths):
@@ -65,6 +66,7 @@ def show_points_3d(X, Y, Z, paths):
     for x, y, z in zip(X, Y, Z):
         ax.scatter([x], [y], [z], marker='o', color='red')
     plt.savefig('../3d.png')
+    plt.close()
 
 
 def count_tf(tokens):
@@ -84,7 +86,7 @@ def get_matrix(term_doc_index):
     for path in paths:
         feature_set.update(term_doc_index[path].keys())
         rows.append(term_doc_index[path])
-        if len(feature_set) > 100000:
+        if len(feature_set) > 10000:
             break
     s = dict(zip(feature_set, [0] * len(feature_set)))
     res = []

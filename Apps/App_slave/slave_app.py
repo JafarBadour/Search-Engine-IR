@@ -33,6 +33,19 @@ def add_document():
     return "Success"
 
 
+@app.after_request
+def add_header(r):
+    """
+    Add headers to both force latest IE rendering engine or Chrome Frame,
+    and also to cache the rendered page for 10 minutes.
+    """
+    r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    r.headers["Pragma"] = "no-cache"
+    r.headers["Expires"] = "0"
+    r.headers['Cache-Control'] = 'public, max-age=0'
+    return r
+
+
 @app.route('/view_doc/.misc/docs/<string:folder>/<string:file>', methods=['GET', 'POST'])
 def view_doc(folder, file):
     return read_doc(f'.misc/docs/{folder}/{file}')
@@ -42,14 +55,13 @@ def view_doc(folder, file):
 def get_pic(index):
     x = 'Failed'
     print("../" + index)
+    return send_file(index, mimetype='image/png', as_attachment=True, cache_timeout=0)
 
-    x = send_file(index, mimetype='image/png', as_attachment=True, cache_timeout=0)
-    # with open('../' + index, 'rb') as f:
-    #     figfile = f.readlines()
-    # figfile = b''.join(figfile)
-    # figdata_png = base64.b64encode(figfile)
-    # print(x)
-    return x
+
+@app.route('/post_doc/<string:doc_id>', methods=['GET'])
+def post_doc(doc_id):
+    pass
+
 
 
 @app.route('/', methods=['GET'])
