@@ -7,7 +7,7 @@ from nltk.stem import WordNetLemmatizer
 
 def normalize(text, is_query=False):
     text = unidecode.unidecode(text)  # remove accents
-    text = text.replace('+',' ')
+    text = text.replace('+', ' ')
     text = re.sub('(\w)', lambda m: m.group(0).lower(), text)  # to_lower the entire text
     if is_query:
         text = re.sub('[^a-z $ *]', "", text)  # remove punctuations
@@ -55,7 +55,7 @@ class Parser:
 
     def preprocess(self, text, is_query=False):
 
-        res = self.remove_stop_word(lemmatization(self.tokenize(normalize(text, is_query))))
+        res = self.remove_stop_word(stemmatiztion(lemmatization(self.tokenize(normalize(text, is_query)))))
         if not is_query:
             return ["$" + i + "$" for i in res]
         else:

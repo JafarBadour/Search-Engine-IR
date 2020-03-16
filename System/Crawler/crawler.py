@@ -23,9 +23,6 @@ def get_documents(file):
     return docs
 
 
-
-
-
 def process_docs(docs):
     return list(map(lambda x: BeautifulSoup(x, features="html.parser").get_text(), docs))
 
@@ -60,13 +57,14 @@ class Crawler:
                     zip([f"{document_path('./.misc/docs/', file[:-4])}/{str(i + 1)}.txt" for i in range(len(docs))],
                         docs)))
 
-
-
     def retrieve_docs(self):
         # for now random
 
         path, doc = random.choice(self.docs)
         return str(path) + "\n" + str(doc)
+
+    def retrieve_all_docs(self):
+        return self.docs
 
 
 if __name__ == '__main__':
