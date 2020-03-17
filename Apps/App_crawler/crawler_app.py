@@ -21,6 +21,7 @@ if __name__ == '__main__':
     crawler.get_collection()
 
     while True:
+        # g = input()
         doc = crawler.retrieve_docs()
         try:
             add_document(doc, 5500)

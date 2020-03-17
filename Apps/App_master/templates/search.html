@@ -3,7 +3,7 @@
 <body>
 <a class="active" href="/search"><H1>Search</H1></a>
 {% for slave in slaves%}
-<a class="ansi-cyan-bg" href="/visualize_slave/{{ slave }}"><h2>Visualize slave {{ slave }}</h2></a>
+<a class="ansi-cyan-bg" href="/visualize/{{ slave }}"><h2>Visualize slave {{ slave }}</h2></a>
 {% endfor %}
 {% for form in forms %}
 <div class="topnav">

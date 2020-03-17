@@ -1,6 +1,8 @@
 import functools
 import math
 import re
+
+import numpy
 from sklearn.decomposition import PCA
 from System.DataManager.datamanager import tolerant_mkdir, get_parent, save_doc, merge, DBmanager
 from System.Parser.query_parser import Parser
@@ -84,6 +86,7 @@ def get_matrix(term_doc_index):
     feature_set = set([])
     rows = []
     for path in paths:
+        print(term_doc_index[path])
         feature_set.update(term_doc_index[path].keys())
         rows.append(term_doc_index[path])
         if len(feature_set) > 10000:
@@ -106,7 +109,6 @@ def get_pca_decomposition(term_doc_matrix):
     # print(pca.explained_variance_ratio_)
     k = 3
 
-    # TODO apply PCA to matrix A, and save the results to Ak
     Ak = pca.fit_transform(A)
     varience_ratio = pca.explained_variance_ratio_
     print("2 first dimensions")
@@ -114,6 +116,36 @@ def get_pca_decomposition(term_doc_matrix):
     print("3 first dimensions")
     show_points_3d(Ak.T[0], Ak.T[1], Ak.T[2], paths)
     return varience_ratio
+
+
+def retrieve_closest(doc_query_features, docs):
+    scores = list(map(lambda x: cosine_similarity(doc_query_features, docs[x]), docs.keys()))
+    zipped_doc_score = list(reversed(sorted(zip(scores, docs))))
+
+    scores = list(map(lambda x: x[0], zipped_doc_score))
+    docs = list(map(lambda x: x[1], zipped_doc_score))
+
+    return scores, docs
+
+
+def cosine_similarity(x, y):
+    d = {'a': x, 'b': y}
+    ar = get_matrix(d)[0]
+    return numpy.dot(list(ar[0]), list(ar[1]))
+
+
+def normalize(term_vector):
+    if len(term_vector.keys()) == 0:
+        return dict()
+    if len(term_vector.keys()) == 1:
+        key = list(term_vector.keys())[0]
+        term_vector[key] = 1
+        return term_vector
+    L2norm = math.sqrt(
+        functools.reduce(lambda x, y: (term_vector[x] ** 2 if type('str') == type(x) else x) + term_vector[y] ** 2,
+                         term_vector.keys()))
+    return dict([(i, term_vector[i] / L2norm) for i in term_vector.keys()])
+
 
 class Indexer:
     def __init__(self):
@@ -141,15 +173,29 @@ class Indexer:
         self.db.free_aux_index(aux_index=self.aux_index)
         # return collection
 
+    def optimize_via_cosine(self, query: str, docs: list):
+        if len(docs) == 0:
+            return [], []
+        tf_vector = normalize(count_tf(self.parser.preprocess(query)))
+        print(self.term_doc_matrix.keys())
+        docs = dict(map(lambda x:(x, self.term_doc_matrix[x]), docs))
+        return retrieve_closest(tf_vector, docs)
+
+    def get_closest_docs(self, doc_query: str):
+
+        doc_query = './' + doc_query
+        if not doc_query in self.term_doc_matrix.keys():
+            return [None], [f'Incorrect document name {doc_query}']
+        doc_query_features = self.term_doc_matrix[doc_query]
+        docs = self.term_doc_matrix
+
+        return retrieve_closest(doc_query_features, docs)
+
     def pca_visualize(self):
         return get_pca_decomposition(self.term_doc_matrix)
 
     def fill_term_matrix(self, path: str, collection):
-        term_vector = count_tf(collection)
-        L2norm = math.sqrt(
-            functools.reduce(lambda x, y: (term_vector[x] ** 2 if type('str') == type(x) else x) + term_vector[y] ** 2,
-                             term_vector.keys()))
-        term_vector = dict([(i, term_vector[i] / L2norm) for i in term_vector.keys()])
+        term_vector = normalize(count_tf(collection))
         self.term_doc_matrix.setdefault(path, term_vector)
 
     def make_word_index(self, collection):
@@ -241,9 +287,10 @@ class Indexer:
         return new_text
 
     def search(self, query: str):
-        print(query)
+
         query_copy = self.parser.preprocess(query, is_query=True)
-        print(query_copy)
+        if len(query_copy) == 0:
+            return [], []
         expression = ''
         relevant = None
         for word in query_copy:

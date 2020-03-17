@@ -1,4 +1,9 @@
 <!DOCTYPE html>
+
+<title>Slave Results</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">-->
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -11,10 +16,18 @@
 <H2> possible intrepretation is: {{ exp }}</H2>
 <h1>Results:</h1>
 {% if posts %}
-{% for post in posts %}
-<h2><a href= /{{ post.article_path }} > {{ post.article_path }} </a></h2>
-<p> {{ post.article_content }}</p>
-{% endfor %}
+<div class="topnav">
+    <div class="w3-container">
+        {% for post in posts %}
+        <h2><a href=/{{ post.article_path }}> {{ post.article_path }} </a></h2>
+        <p> {{ post.article_content }}</p>
+        {% if post.score %}
+        <p>
+        <H2>Score is {{ post.score }}</H2></p>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
 {% else %}
 <H1>No results to show</H1>
 {% endif %}

@@ -8,6 +8,9 @@ app.config['SECRET_KEY'] = '5791628bb0b13ce1c676dfde280ba245'
 load_balancer = LoadBalancer()
 
 
+
+
+
 @app.route('/')
 def landing():
     return redirect('/search', code=302)
@@ -30,6 +33,9 @@ def get_results():
     posty = 'post_query/'
     if kind == 'Doc':
         posty = 'post_doc/'
+        query = query.replace('%2F', '$')
+
+    print(query)
 
     API_ENDPOINT = load_balancer.get_free_slave()
 
@@ -39,13 +45,12 @@ def get_results():
     return redirect(API_ENDPOINT + posty + f"{query}", 308)
 
 
-@app.route('/visualize_slave/<string:slave>', methods=['GET', 'POST'])
+@app.route('/visualize/<string:slave>', methods=['GET', 'POST'])
 def visualize_slave(slave: str):
-
     slave = load_balancer.get_slave(slave)
+    print(slave)
 
     return redirect(slave, 308)
-
 
 
 @app.after_request
@@ -59,6 +64,7 @@ def add_header(r):
     r.headers["Expires"] = "0"
     r.headers['Cache-Control'] = 'public, max-age=0'
     return r
+
 
 if __name__ == '__main__':
     app.run(debug=True)
