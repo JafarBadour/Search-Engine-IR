@@ -32,4 +32,4 @@ if __name__ == '__main__':
             add_document(doc, 6500)
         except:
             pass
-        time.sleep(2.5)
+        #time.sleep(2.5)
